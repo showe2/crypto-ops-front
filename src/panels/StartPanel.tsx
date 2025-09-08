@@ -4,15 +4,25 @@ import { Badge, Button, Card, Input } from "@components/UI";
 import { cn } from "@lib/fmt";
 export default function StartPanel() {
   const [apis, setApis] = useState([
-    { key: "HELIUS", label: "Helius", ok: false, keyValue: "" },
-    { key: "BIRDEYE", label: "Birdeye", ok: false, keyValue: "" },
-    { key: "RUGCHECK", label: "RugCheck", ok: false, keyValue: "" },
-    { key: "GOPLUS_TOK", label: "GoPlus(Token)", ok: false, keyValue: "" },
-    { key: "GOPLUS_CONT", label: "GoPlus(Contract)", ok: false, keyValue: "" },
-    { key: "GOPLUS_ADDR", label: "GoPlus(Address)", ok: false, keyValue: "" },
-    { key: "DEXSCREENER", label: "DexScreener", ok: false, keyValue: "" },
-    { key: "QUICKNODE", label: "QuickNode", ok: false, keyValue: "" },
-    { key: "GROQ", label: "Groq LLM", ok: false, keyValue: "" },
+    { key: "HELIUS_API_KEY", label: "Helius", ok: false, keyValue: "" },
+    { key: "BIRDEYE_API_KEY", label: "Birdeye", ok: false, keyValue: "" },
+    { key: "INTERNAL_TOKEN", label: "Ingest Token", ok: false, keyValue: "" },
+    {
+      key: "GOPLUS_APP_KEY",
+      label: "GoPlus (KEY)",
+      ok: false,
+      keyValue: "",
+    },
+    {
+      key: "GOPLUS_APP_SECRET",
+      label: "GoPlus (SCRT)",
+      ok: false,
+      keyValue: "",
+    },
+    { key: "SOLSNIFFER_API_KEY", label: "SolSniffer", ok: false, keyValue: "" },
+    { key: "SOLANAFM_API_KEY", label: "SolanaFM", ok: false, keyValue: "" },
+    { key: "WALLET_SECRET_KEY", label: "SOL Wallet", ok: false, keyValue: "" },
+    { key: "GROQ_API_KEY", label: "Groq LLM", ok: false, keyValue: "" },
   ]);
   const [sel, setSel] = useState<string | null>(null);
   const [key, setKey] = useState("");
