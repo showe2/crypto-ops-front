@@ -1,2 +1,107 @@
-import React,{useState}from'react';import{api}from'@lib/api';import{Badge,Button,Card,Input}from'@components/UI';import{cn}from'@lib/fmt';
-export default function StartPanel(){const[apis,setApis]=useState([{key:'HELIUS',label:'Helius',ok:false,keyValue:''},{key:'BIRDEYE',label:'Birdeye',ok:false,keyValue:''},{key:'RUGCHECK',label:'RugCheck',ok:false,keyValue:''},{key:'GOPLUS_TOK',label:'GoPlus(Token)',ok:false,keyValue:''},{key:'GOPLUS_CONT',label:'GoPlus(Contract)',ok:false,keyValue:''},{key:'GOPLUS_ADDR',label:'GoPlus(Address)',ok:false,keyValue:''},{key:'DEXSCREENER',label:'DexScreener',ok:false,keyValue:''},{key:'QUICKNODE',label:'QuickNode',ok:false,keyValue:''},{key:'GROQ',label:'Groq LLM',ok:false,keyValue:''}]);const[sel,setSel]=useState<string|null>(null);const[key,setKey]=useState('');const[msg,setMsg]=useState("Нажмите 'Чек' для статуса.");const allOk=apis.every(a=>a.ok);const apply=async()=>{if(!sel)return;const next=apis.map(a=>a.key===sel?{...a,ok:Boolean(key),keyValue:key}:a);setApis(next);setKey('');try{await api('POST','/api/keys',{key:sel,value:(next.find(x=>x.key===sel)||{} as any).keyValue})}catch{}};const health=async()=>{try{const r=await api('GET','/api/health');setMsg(typeof r==='string'?r:'Все хорошо: сервисы активны.')}catch{setMsg('Проблема: не отвечает один из сервисов')}};return(<div className='grid xl:grid-cols-3 gap-6'><Card title='API Connectors' right={<Badge color={allOk?'green':'yellow'}>{allOk?'Все подключено':'Нужно настроить'}</Badge>}><div className='grid grid-cols-2 md:grid-cols-3 gap-3'>{apis.map(a=>(<div key={a.key} onClick={()=>setSel(a.key)} className={cn('flex items-center justify-between gap-3 rounded-2xl border p-3 cursor-pointer','border-slate-800 bg-slate-900/60 hover:bg-slate-800/60',sel===a.key&&'ring-2 ring-indigo-500')}><div className='text-slate-200 font-medium'>{a.label}</div>{a.ok?<Badge color='green'>OK</Badge>:<Badge color='red'>OFF</Badge>}</div>))}</div></Card><Card title='Ключ'><div className='grid gap-3'><Input value={sel??'—'} readOnly/><Input placeholder='sk-... / gsk-...' value={key} onChange={e=>setKey((e.target as HTMLInputElement).value)}/><div className='flex gap-2'><Button onClick={apply} disabled={!sel||!key}>Активировать</Button><Button variant='ghost' onClick={()=>setKey('')}>Очистить</Button></div><div className='text-xs text-slate-400'>Секреты в backend; в демо — в состоянии клиента.</div></div></Card><Card title='Статус'><div className='grid gap-3'><div className='rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-sm text-slate-100'>{msg}</div><Button variant='success' onClick={health}>Чек</Button></div></Card></div>)}
+import React, { useState } from "react";
+import { api } from "@lib/api";
+import { Badge, Button, Card, Input } from "@components/UI";
+import { cn } from "@lib/fmt";
+export default function StartPanel() {
+  const [apis, setApis] = useState([
+    { key: "HELIUS", label: "Helius", ok: false, keyValue: "" },
+    { key: "BIRDEYE", label: "Birdeye", ok: false, keyValue: "" },
+    { key: "RUGCHECK", label: "RugCheck", ok: false, keyValue: "" },
+    { key: "GOPLUS_TOK", label: "GoPlus(Token)", ok: false, keyValue: "" },
+    { key: "GOPLUS_CONT", label: "GoPlus(Contract)", ok: false, keyValue: "" },
+    { key: "GOPLUS_ADDR", label: "GoPlus(Address)", ok: false, keyValue: "" },
+    { key: "DEXSCREENER", label: "DexScreener", ok: false, keyValue: "" },
+    { key: "QUICKNODE", label: "QuickNode", ok: false, keyValue: "" },
+    { key: "GROQ", label: "Groq LLM", ok: false, keyValue: "" },
+  ]);
+  const [sel, setSel] = useState<string | null>(null);
+  const [key, setKey] = useState("");
+  const [msg, setMsg] = useState("Нажмите 'Чек' для статуса.");
+  const allOk = apis.every((a) => a.ok);
+  const apply = async () => {
+    if (!sel) return;
+    const next = apis.map((a) =>
+      a.key === sel ? { ...a, ok: Boolean(key), keyValue: key } : a
+    );
+    setApis(next);
+    setKey("");
+    try {
+      await api("POST", "/api/keys", {
+        key: sel,
+        value: (next.find((x) => x.key === sel) || ({} as any)).keyValue,
+      });
+    } catch {}
+  };
+  const health = async () => {
+    try {
+      const r = await api("GET", "/api/health");
+      setMsg(typeof r === "string" ? r : "Все хорошо: сервисы активны.");
+    } catch {
+      setMsg("Проблема: не отвечает один из сервисов");
+    }
+  };
+  return (
+    <div className="grid xl:grid-cols-3 gap-6">
+      <Card
+        title="API Connectors"
+        right={
+          <Badge color={allOk ? "green" : "yellow"}>
+            {allOk ? "Все подключено" : "Нужно настроить"}
+          </Badge>
+        }
+      >
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {apis.map((a) => (
+            <div
+              key={a.key}
+              onClick={() => setSel(a.key)}
+              className={cn(
+                "flex items-center justify-between gap-3 rounded-2xl border p-3 cursor-pointer",
+                "border-slate-800 bg-slate-900/60 hover:bg-slate-800/60",
+                sel === a.key && "ring-2 ring-indigo-500"
+              )}
+            >
+              <div className="text-slate-200 font-medium">{a.label}</div>
+              {a.ok ? (
+                <Badge color="green">OK</Badge>
+              ) : (
+                <Badge color="red">OFF</Badge>
+              )}
+            </div>
+          ))}
+        </div>
+      </Card>
+      <Card title="Ключ">
+        <div className="grid gap-3">
+          <Input value={sel ?? "—"} readOnly />
+          <Input
+            placeholder="sk-... / gsk-..."
+            value={key}
+            onChange={(e) => setKey((e.target as HTMLInputElement).value)}
+          />
+          <div className="flex gap-2">
+            <Button onClick={apply} disabled={!sel || !key}>
+              Активировать
+            </Button>
+            <Button variant="ghost" onClick={() => setKey("")}>
+              Очистить
+            </Button>
+          </div>
+          <div className="text-xs text-slate-400">
+            Секреты в backend; в демо — в состоянии клиента.
+          </div>
+        </div>
+      </Card>
+      <Card title="Статус">
+        <div className="grid gap-3">
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-sm text-slate-100">
+            {msg}
+          </div>
+          <Button variant="success" onClick={health}>
+            Чек
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}

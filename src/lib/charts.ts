@@ -1,1 +1,16 @@
-export function openChart({mint,links={}}:{mint?:string,links?:any}){const t=[links.pumpfun||(mint?`https://pump.fun/${mint}`:null),links.bonk||(mint?`https://bonkbot.io/token/${mint}`:null),links.birdeye||(mint?`https://birdeye.so/token/${mint}?chain=solana`:null),links.axiom||(mint?`https://app.axiom.xyz/token/${mint}`:null)].filter(Boolean) as string[];if(t.length)window.open(t[0],'_blank');}
+export function openChart({
+  mint,
+  links = {},
+}: {
+  mint?: string;
+  links?: any;
+}) {
+  const t = [
+    links.pumpfun || (mint ? `https://pump.fun/${mint}` : null),
+    links.bonk || (mint ? `https://bonkbot.io/token/${mint}` : null),
+    links.birdeye ||
+      (mint ? `https://birdeye.so/token/${mint}?chain=solana` : null),
+    links.axiom || (mint ? `https://app.axiom.xyz/token/${mint}` : null),
+  ].filter(Boolean) as string[];
+  if (t.length) window.open(t[0], "_blank");
+}

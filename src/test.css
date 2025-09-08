@@ -1,0 +1,13 @@
+@import url("https://cdn.tailwindcss.com");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Test styles to verify CSS is loading */
+.test-red {
+  background-color: red !important;
+  color: white !important;
+  padding: 20px !important;
+  font-size: 24px !important;
+}
