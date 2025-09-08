@@ -1,0 +1,44 @@
+{
+  "sources": [
+    {
+      "name": "CoinList",
+      "url": "https://coinlist.co/"
+    },
+    {
+      "name": "MEXC Kickstarter",
+      "url": "https://www.mexc.com/"
+    },
+    {
+      "name": "Gate.io Startup",
+      "url": "https://www.gate.io/startup"
+    },
+    {
+      "name": "KuCoin BurningDrop",
+      "url": "https://www.kucoin.com/"
+    },
+    {
+      "name": "Bybit Launchpad",
+      "url": "https://www.bybit.com/"
+    },
+    {
+      "name": "OKX Jumpstart",
+      "url": "https://www.okx.com/"
+    },
+    {
+      "name": "Binance Launchpool",
+      "url": "https://www.binance.com/"
+    },
+    {
+      "name": "Huobi Primelist",
+      "url": "https://www.htx.com/"
+    },
+    {
+      "name": "Raydium New Pools",
+      "url": "https://raydium.io/"
+    },
+    {
+      "name": "Jupiter LFG",
+      "url": "https://lfg.jup.ag/"
+    }
+  ]
+}

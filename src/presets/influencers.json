@@ -1,0 +1,19 @@
+{
+  "influencers": [
+    {
+      "handle": "elonmusk",
+      "platform": "twitter",
+      "tier": "A"
+    },
+    {
+      "handle": "cz_binance",
+      "platform": "twitter",
+      "tier": "A"
+    },
+    {
+      "handle": "martingalesol",
+      "platform": "twitter",
+      "tier": "B"
+    }
+  ]
+}

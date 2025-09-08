@@ -1,0 +1,18 @@
+{
+  "devs": [
+    {
+      "addr": "Dev111...",
+      "name": "Dev_Alpha",
+      "migrations": 2,
+      "good_migrations": 2,
+      "projects": "OK launch x2"
+    },
+    {
+      "addr": "Dev222...",
+      "name": "Dev_Beta",
+      "migrations": 3,
+      "good_migrations": 1,
+      "projects": "Mixed history"
+    }
+  ]
+}

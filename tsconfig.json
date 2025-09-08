@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@lib/*": [
+        "src/lib/*"
+      ],
+      "@components/*": [
+        "src/components/*"
+      ],
+      "@panels/*": [
+        "src/panels/*"
+      ],
+      "@utils/*": [
+        "src/utils/*"
+      ],
+      "@types/*": [
+        "src/types/*"
+      ],
+      "@dev/*": [
+        "src/dev/*"
+      ],
+      "@presets/*": [
+        "src/presets/*"
+      ]
+    }
+  },
+  "include": [
+    "src"
+  ]
+}

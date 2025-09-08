@@ -1,0 +1,26 @@
+{
+  "whales": [
+    {
+      "addr": "Whale111...",
+      "name": "W_Alpha",
+      "win": 62,
+      "avg_sol": 120.5,
+      "hold_days": 2,
+      "coins": [
+        "FROG",
+        "DOGE2025"
+      ]
+    },
+    {
+      "addr": "Whale222...",
+      "name": "W_Beta",
+      "win": 58,
+      "avg_sol": 80.1,
+      "hold_days": 1,
+      "coins": [
+        "PEPE",
+        "CAT"
+      ]
+    }
+  ]
+}
