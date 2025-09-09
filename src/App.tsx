@@ -29,7 +29,7 @@ export default function App() {
       <header className="mb-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            Crypto Ops Console — V7 (full)
+            Crypto Ops Console
           </h1>
           <div className="flex gap-2 flex-wrap">
             {TABS.map((t) => (

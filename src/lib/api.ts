@@ -3,16 +3,26 @@ export const API =
     import.meta.env &&
     import.meta.env.VITE_API_BASE) ||
   "";
+
 export async function api(m: string, p: string, b?: any) {
+  const headers: any = { "Content-Type": "application/json" };
+
+  // Add ngrok bypass header if using ngrok
+  if (API.includes("ngrok")) {
+    headers["ngrok-skip-browser-warning"] = "true";
+  }
+
   const res = await fetch(`${API}${p}`, {
     method: m,
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: b ? JSON.stringify(b) : undefined,
   });
+
   if (!res.ok) throw new Error(String(res.status));
   const ct = res.headers.get("content-type") || "";
   return ct.includes("application/json") ? res.json() : res.text();
 }
+
 export function download(
   name: string,
   content: string,
