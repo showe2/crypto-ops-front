@@ -35,12 +35,31 @@ export default function WhalesPanel() {
       }
     })();
   }, []);
-  const exp = () =>
-    download(
-      `whales_${Date.now()}.docx`,
-      JSON.stringify({ whales, devs }, null, 2),
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    );
+  const exp = async () => {
+    try {
+      const whalesData = { whales, devs };
+      const response = await api(
+        "POST",
+        "/api/docx/run_id?type=whales",
+        whalesData
+      );
+      console.log("📄 DOCX response from backend:", response);
+      const blob = new Blob([response], {
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `whales_${Date.now()}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("❌ Error generating DOCX:", err);
+      alert("Ошибка генерации DOCX файла");
+    }
+  };
   const imp = (e: any, type: "whales" | "devs") => {
     const f = e.target.files?.[0];
     if (!f) return;

@@ -1,20 +1,45 @@
 import React, { useState } from "react";
-import { api, download } from "@lib/api";
+import { api, download, API } from "@lib/api";
 import { openChart } from "@lib/charts";
 import { Badge, Button, Card, CopyBtn, Input } from "@components/UI";
+
 export default function PoiskPanel() {
   const [q, setQ] = useState("");
   const [r, setR] = useState<any | null>(null);
+  const [currentRunId, setCurrentRunId] = useState<string | null>(null);
   const [chat, setChat] = useState<any[]>([]);
   const [ask, setAsk] = useState("");
+
   const run = async () => {
     try {
+      console.log("🔍 Searching for token:", q);
+      console.log(
+        "🔍 Making request to:",
+        `/api/token/report?query=${encodeURIComponent(q)}`
+      );
       const x = await api(
         "GET",
         `/api/token/report?query=${encodeURIComponent(q)}`
       );
+      console.log("📊 RAW RESPONSE from /api/token/report:");
+      console.log(x);
+      console.log("📊 Response type:", typeof x);
+      console.log("📊 Is array?", Array.isArray(x));
+      console.log("📊 Response keys:", x ? Object.keys(x) : "null/undefined");
+      if (x && typeof x === "object") {
+        console.log("📊 DETAILED FIELD ANALYSIS:");
+        Object.entries(x).forEach(([key, value]) => {
+          console.log(`  - ${key}:`, value, `(type: ${typeof value})`);
+        });
+        console.log("📊 run_id found:", x.run_id);
+        setCurrentRunId(x.run_id || null);
+      }
+      console.log("📊 JSON.stringify:", JSON.stringify(x, null, 2));
       setR(x);
-    } catch {
+    } catch (err) {
+      console.error("❌ Error calling /api/token/report:", err);
+      console.error("❌ Full error object:", err);
+      setCurrentRunId(null);
       setR({
         name: "DEMO-COIN",
         contract: "DeMo...",
@@ -31,15 +56,18 @@ export default function PoiskPanel() {
       });
     }
   };
+
   const askAI = async () => {
     const msg = { role: "user", content: ask, ts: Date.now() };
     setChat((c) => [...c, msg]);
     setAsk("");
     try {
+      console.log("🤖 Asking AI:", ask);
       const a = await api("POST", "/api/ask", {
         q: msg.content,
         context: "memory",
       });
+      console.log("🤖 AI Response:", a);
       setChat((c) => [
         ...c,
         {
@@ -49,13 +77,76 @@ export default function PoiskPanel() {
           ),
         },
       ]);
-    } catch {
+    } catch (err) {
+      console.error("❌ Error calling /api/ask:", err);
       setChat((c) => [
         ...c,
         { role: "assistant", content: "(demo) ИИ недоступна, ответ оффлайн." },
       ]);
     }
   };
+
+  const generateDOCX = async () => {
+    try {
+      if (!currentRunId) {
+        alert("Сначала выполните поиск для получения run_id");
+        return;
+      }
+      console.log("📄 Generating DOCX with run_id:", currentRunId);
+      const response = await fetch(
+        `${API}/api/docx/${currentRunId}?type=discovery`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(API.includes("ngrok")
+              ? { "ngrok-skip-browser-warning": "true" }
+              : {}),
+          },
+          body: JSON.stringify({}),
+        }
+      );
+      console.log("📄 Response status:", response.status);
+      console.log(
+        "📄 Response headers:",
+        Object.fromEntries(response.headers.entries())
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      const contentType = response.headers.get("content-type") || "";
+      console.log("📄 Content-Type:", contentType);
+      if (contentType.includes("application/json")) {
+        const jsonData = await response.json();
+        console.log("📄 Received JSON instead of DOCX:", jsonData);
+        alert("Backend returned JSON instead of DOCX file");
+        return;
+      }
+      const blob = await response.blob();
+      console.log("📄 Blob size:", blob.size, "bytes");
+      console.log("📄 Blob type:", blob.type);
+      if (blob.size === 0) {
+        alert("Received empty file from backend");
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `discovery_report_${currentRunId}.docx`;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      console.log("📄 Download triggered for file:", a.download);
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    } catch (err) {
+      console.error("❌ Error generating DOCX:", err);
+      alert(`Ошибка генерации DOCX файла`);
+    }
+  };
+
   return (
     <div className="grid gap-4">
       <Card title="Поиск токена">
@@ -66,20 +157,6 @@ export default function PoiskPanel() {
             onChange={(e) => setQ((e.target as HTMLInputElement).value)}
           />
           <Button onClick={run}>Проверить</Button>
-          {r && (
-            <Button
-              variant="ghost"
-              onClick={() =>
-                download(
-                  `report_${r.contract || "token"}.docx`,
-                  JSON.stringify(r, null, 2),
-                  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
-              }
-            >
-              DOCX
-            </Button>
-          )}
         </div>
       </Card>
       {r && (
@@ -122,7 +199,12 @@ export default function PoiskPanel() {
             Вердикт ИИ: {r.verdict}
           </div>
           <div className="mt-2 flex gap-2">
-            <Button onClick={() => openChart({ mint: r.mint, links: r.links })}>
+            <Button
+              onClick={() => {
+                const birdeyeUrl = `https://birdeye.so/token/${r.mint}?chain=solana`;
+                window.open(birdeyeUrl, "_blank");
+              }}
+            >
               График
             </Button>
             <Button
@@ -136,6 +218,9 @@ export default function PoiskPanel() {
             >
               Купить
             </Button>
+            <Button variant="ghost" onClick={generateDOCX}>
+              DOCX
+            </Button>
           </div>
         </Card>
       )}
@@ -146,7 +231,7 @@ export default function PoiskPanel() {
               <div key={i} className="my-1">
                 <Badge color={m.role === "user" ? "yellow" : "green"}>
                   {m.role}
-                </Badge>{" "}
+                </Badge>
                 <span className="text-slate-200">{m.content}</span>
               </div>
             ))}

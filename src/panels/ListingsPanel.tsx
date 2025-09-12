@@ -35,12 +35,31 @@ export default function ListingsPanel() {
       ),
       "text/csv;charset=utf-8"
     );
-  const exportDOCX = () =>
-    download(
-      `listings_${Date.now()}.docx`,
-      JSON.stringify({ rows, sites }, null, 2),
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    );
+  const exportDOCX = async () => {
+    try {
+      const listingsData = { rows, sites };
+      const response = await api(
+        "POST",
+        "/api/docx/run_id?type=listings",
+        listingsData
+      );
+      console.log("📄 DOCX response from backend:", response);
+      const blob = new Blob([response], {
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `listings_${Date.now()}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("❌ Error generating DOCX:", err);
+      alert("Ошибка генерации DOCX файла");
+    }
+  };
   const onUploadSites = (e: any) => {
     const f = e.target.files?.[0];
     if (!f) return;

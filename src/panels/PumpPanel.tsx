@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { api, download } from "@lib/api";
+import { api, download, API } from "@lib/api";
 import { Card, NumberInput, Button, CopyBtn } from "@components/UI";
 import presets from "@presets/filters.pump.json";
+
 type Vals = {
   t0: number;
   t1: number;
@@ -16,6 +17,7 @@ type Vals = {
   wh1h: number;
   soc: number;
 };
+
 export default function PumpPanel() {
   const [presetKey, setPresetKey] = useState(
     presets.presets?.[1]?.key || "balanced"
@@ -35,19 +37,21 @@ export default function PumpPanel() {
     wh1h: 0,
     soc: 0,
   };
-  const [t0, setT0] = useState<number>(pv.t0),
-    [t1, setT1] = useState<number>(pv.t1),
-    [v0, setV0] = useState<number>(pv.v0),
-    [v1, setV1] = useState<number>(pv.v1),
-    [m0, setM0] = useState<number>(pv.m0),
-    [m1, setM1] = useState<number>(pv.m1),
-    [l0, setL0] = useState<number>(pv.l0),
-    [l1, setL1] = useState<number>(pv.l1);
+  const [t0, setT0] = useState<number>(pv.t0);
+  const [t1, setT1] = useState<number>(pv.t1);
+  const [v0, setV0] = useState<number>(pv.v0);
+  const [v1, setV1] = useState<number>(pv.v1);
+  const [m0, setM0] = useState<number>(pv.m0);
+  const [m1, setM1] = useState<number>(pv.m1);
+  const [l0, setL0] = useState<number>(pv.l0);
+  const [l1, setL1] = useState<number>(pv.l1);
   const [flags, setFlags] = useState({ adsDEX: pv.adsDEX });
   const [globalFee, setGlobalFee] = useState<number>(pv.globalFee);
   const [wh1h, setWh1h] = useState<number>(pv.wh1h);
   const [soc, setSoc] = useState<number>(pv.soc);
   const [rows, setRows] = useState<any[]>([]);
+  const [currentRunId, setCurrentRunId] = useState<string | null>(null);
+
   const applyPreset = (k: string) => {
     const v = (presets.presets || []).find((x: any) => x.key === k)
       ?.values as Vals;
@@ -66,6 +70,7 @@ export default function PumpPanel() {
     setWh1h(v.wh1h);
     setSoc(v.soc);
   };
+
   const search = async () => {
     try {
       const q = {
@@ -82,9 +87,31 @@ export default function PumpPanel() {
         whales1hMin: wh1h,
         socialMin: soc,
       };
+      console.log("🔍 Sending filters request:", JSON.stringify(q, null, 2));
       const out = await api("POST", "/api/filters", q);
-      setRows(Array.isArray(out) ? out : []);
-    } catch {
+      console.log("📊 RAW RESPONSE from /api/filters:", out);
+      console.log("📊 Response type:", typeof out);
+      if (out && typeof out === "object") {
+        console.log("📊 Response keys:", Object.keys(out));
+        console.log("📊 candidates:", out.candidates);
+        console.log("📊 total_found:", out.total_found);
+        console.log("📊 error:", out.error);
+        console.log("📊 run_id:", out.run_id);
+        setCurrentRunId(out.run_id || null);
+        if (out.candidates && Array.isArray(out.candidates)) {
+          console.log("📊 Found", out.candidates.length, "pump candidates");
+          setRows(out.candidates);
+        } else {
+          console.log("📊 No candidates found or invalid format");
+          setRows([]);
+        }
+      } else {
+        console.log("📊 Invalid response format");
+        setRows([]);
+      }
+    } catch (err) {
+      console.error("❌ Error calling /api/filters:", err);
+      setCurrentRunId(null);
       setRows([
         {
           rank: 1,
@@ -115,33 +142,77 @@ export default function PumpPanel() {
       ]);
     }
   };
-  const exp = () =>
-    download(
-      `pump_${Date.now()}.docx`,
-      JSON.stringify(
+
+  const exp = async () => {
+    try {
+      if (!currentRunId) {
+        alert("Сначала выполните поиск для получения run_id");
+        return;
+      }
+      console.log("📄 Generating DOCX with run_id:", currentRunId);
+
+      const response = await fetch(
+        `${API}/api/docx/${currentRunId}?type=pump`,
         {
-          preset: presetKey,
-          filters: {
-            t0,
-            t1,
-            v0,
-            v1,
-            m0,
-            m1,
-            l0,
-            l1,
-            flags,
-            globalFee,
-            wh1h,
-            soc,
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(API.includes("ngrok")
+              ? { "ngrok-skip-browser-warning": "true" }
+              : {}),
           },
-          rows,
-        },
-        null,
-        2
-      ),
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    );
+          body: JSON.stringify({}),
+        }
+      );
+
+      console.log("📄 Response status:", response.status);
+      console.log(
+        "📄 Response headers:",
+        Object.fromEntries(response.headers.entries())
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get("content-type") || "";
+      console.log("📄 Content-Type:", contentType);
+
+      if (contentType.includes("application/json")) {
+        const jsonData = await response.json();
+        console.log("📄 Received JSON instead of DOCX:", jsonData);
+        alert("Backend returned JSON instead of DOCX file");
+        return;
+      }
+
+      const blob = await response.blob();
+      console.log("📄 Blob size:", blob.size, "bytes");
+      console.log("📄 Blob type:", blob.type);
+
+      if (blob.size === 0) {
+        alert("Received empty file from backend");
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `pump_analysis_${currentRunId}.docx`;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      console.log("📄 Download triggered for file:", a.download);
+
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    } catch (err) {
+      console.error("❌ Error generating DOCX:", err);
+      alert(`Ошибка генерации DOCX файла`);
+    }
+  };
+
   return (
     <div className="grid gap-4">
       <Card
@@ -219,41 +290,14 @@ export default function PumpPanel() {
             </div>
           </div>
           <div>
-            <label className="inline-flex items-center gap-2 text-slate-200">
-              <input
-                type="checkbox"
-                className="accent-indigo-500"
-                checked={flags.adsDEX}
-                onChange={(e) =>
-                  setFlags({
-                    ...flags,
-                    adsDEX: (e.target as HTMLInputElement).checked,
-                  })
-                }
-              />
-              Реклама DEX
-            </label>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Global fee</span>
-            <NumberInput
-              value={globalFee}
-              onChange={(e) =>
-                setGlobalFee(+(e.target as HTMLInputElement).value)
-              }
-            />
-            <span className="text-slate-300">SOL</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Whales 1h ≥</span>
+            <div className="text-xs text-slate-400 mb-1">Whales 1h ≥ (SOL)</div>
             <NumberInput
               value={wh1h}
               onChange={(e) => setWh1h(+(e.target as HTMLInputElement).value)}
             />
-            <span className="text-slate-300">SOL</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Social score ≥</span>
+          <div>
+            <div className="text-xs text-slate-400 mb-1">Social score ≥</div>
             <NumberInput
               value={soc}
               onChange={(e) => setSoc(+(e.target as HTMLInputElement).value)}
@@ -300,12 +344,40 @@ export default function PumpPanel() {
                       <CopyBtn text={p.mint} />
                     </span>
                   </td>
-                  <td className="p-3 text-slate-300">{p.liq}</td>
-                  <td className="p-3 text-slate-300">{p.vol5}</td>
-                  <td className="p-3 text-slate-300">{p.vol60 || "-"}</td>
-                  <td className="p-3 text-slate-300">{p.whales1h || "-"}</td>
-                  <td className="p-3 text-slate-300">{p.social || "-"}</td>
-                  <td className="p-3 text-slate-300">{p.mcap}</td>
+                  <td className="p-3 text-slate-300">
+                    {typeof p.liq === "object"
+                      ? JSON.stringify(p.liq)
+                      : p.liq || "-"}
+                  </td>
+                  <td className="p-3 text-slate-300">
+                    {typeof p.vol5 === "object"
+                      ? JSON.stringify(p.vol5)
+                      : p.vol5 || "-"}
+                  </td>
+                  <td className="p-3 text-slate-300">
+                    {typeof p.vol60 === "object"
+                      ? JSON.stringify(p.vol60)
+                      : p.vol60 || "-"}
+                  </td>
+                  <td className="p-3 text-slate-300">
+                    {typeof p.whales1h === "object"
+                      ? p.whales1h?.count && p.whales1h.count > 0
+                        ? `${p.whales1h.count} (${
+                            p.whales1h.total_inflow_usd || 0
+                          } USD)`
+                        : "-"
+                      : p.whales1h || "-"}
+                  </td>
+                  <td className="p-3 text-slate-300">
+                    {typeof p.social === "object"
+                      ? JSON.stringify(p.social)
+                      : p.social || "-"}
+                  </td>
+                  <td className="p-3 text-slate-300">
+                    {typeof p.mcap === "object"
+                      ? JSON.stringify(p.mcap)
+                      : p.mcap || "-"}
+                  </td>
                   <td className="p-3 text-slate-200">
                     <div className="whitespace-pre-wrap">
                       {p.ai || "ИИ формирует сигнал..."}
