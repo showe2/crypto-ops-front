@@ -9,6 +9,13 @@ export default function PoiskPanel() {
   const [currentRunId, setCurrentRunId] = useState<string | null>(null);
   const [chat, setChat] = useState<any[]>([]);
   const [ask, setAsk] = useState("");
+  const [uploads, setUploads] = useState<any>({
+    books: [],
+    texts: [],
+    images: [],
+    rules: false,
+    filters: false,
+  });
 
   const run = async () => {
     try {
@@ -63,10 +70,14 @@ export default function PoiskPanel() {
     setAsk("");
     try {
       console.log("🤖 Asking AI:", ask);
-      const a = await api("POST", "/api/ask", {
+      console.log("🤖 Using run_id:", currentRunId);
+      const requestBody = {
         q: msg.content,
         context: "memory",
-      });
+        run_id: currentRunId,
+      };
+      console.log("🤖 Request body:", JSON.stringify(requestBody, null, 2));
+      const a = await api("POST", "/api/ask", requestBody);
       console.log("🤖 AI Response:", a);
       setChat((c) => [
         ...c,
@@ -83,6 +94,65 @@ export default function PoiskPanel() {
         ...c,
         { role: "assistant", content: "(demo) ИИ недоступна, ответ оффлайн." },
       ]);
+    }
+  };
+
+  const readFile = (file: any) =>
+    new Promise((res) => {
+      const R = new FileReader();
+      R.onload = () => res(String(R.result || ""));
+      R.readAsText(file);
+    });
+
+  const handleUpload = async (e: any, type: string) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    try {
+      if (type === "images") {
+        await api("POST", "/api/ingest/images", {
+          files: files.map((f: any) => ({ name: f.name, size: f.size })),
+        });
+        setUploads((u: any) => ({
+          ...u,
+          images: [...u.images, ...files.map((f: any) => f.name)],
+        }));
+      } else if (type === "books") {
+        const texts = await Promise.all(files.map(readFile));
+        await api("POST", "/api/ingest/books", { texts });
+        setUploads((u: any) => ({
+          ...u,
+          books: [...u.books, ...files.map((f: any) => f.name)],
+        }));
+      } else if (type === "texts") {
+        const texts = await Promise.all(files.map(readFile));
+        const parsed = texts.map((t) => {
+          try {
+            return JSON.parse(t as string);
+          } catch {
+            return { raw: t };
+          }
+        });
+        await api("POST", "/api/ingest/texts", { items: parsed });
+        setUploads((u: any) => ({
+          ...u,
+          texts: [...u.texts, ...files.map((f: any) => f.name)],
+        }));
+      }
+    } catch {
+      alert("Ошибка загрузки");
+    }
+  };
+
+  const applyRules = async (type: string) => {
+    try {
+      await api(
+        "POST",
+        type === "rules" ? "/api/ingest/rules" : "/api/ingest/filters",
+        { enable: true }
+      );
+      setUploads((u: any) => ({ ...u, [type]: true }));
+    } catch {
+      alert("Не удалось применить");
     }
   };
 
@@ -244,6 +314,72 @@ export default function PoiskPanel() {
             />
             <Button onClick={askAI}>Спросить</Button>
           </div>
+        </div>
+      </Card>
+
+      <Card title="Загрузка знаний для ИИ">
+        <div className="grid md:grid-cols-2 gap-3 text-sm">
+          <div className="rounded-2xl border border-slate-800 p-3">
+            <div className="text-slate-400 mb-1">Книги (txt/pdf → текст)</div>
+            <input
+              type="file"
+              multiple
+              onChange={(e) => handleUpload(e, "books")}
+              className="block w-full text-slate-200"
+            />
+            <div className="mt-1 text-xs text-slate-400">
+              {uploads.books.length
+                ? `Загружено: ${uploads.books.length}`
+                : "---"}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-800 p-3">
+            <div className="text-slate-400 mb-1">Тексты (JSON)</div>
+            <input
+              type="file"
+              multiple
+              onChange={(e) => handleUpload(e, "texts")}
+              className="block w-full text-slate-200"
+            />
+            <div className="mt-1 text-xs text-slate-400">
+              {uploads.texts.length
+                ? `Загружено: ${uploads.texts.length}`
+                : "---"}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-800 p-3">
+            <div className="text-slate-400 mb-1">Фото</div>
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={(e) => handleUpload(e, "images")}
+              className="block w-full text-slate-200"
+            />
+            <div className="mt-1 text-xs text-slate-400">
+              {uploads.images.length
+                ? `Загружено: ${uploads.images.length}`
+                : "---"}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-800 p-3 grid gap-2">
+            <div className="flex items-center justify-between">
+              <div className="text-slate-400">Глобальные правила</div>
+              <Button variant="success" onClick={() => applyRules("rules")}>
+                {uploads.rules ? "Включены" : "Включить"}
+              </Button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="text-slate-400">Тонкие фильтры</div>
+              <Button variant="success" onClick={() => applyRules("filters")}>
+                {uploads.filters ? "Включены" : "Включить"}
+              </Button>
+            </div>
+          </div>
+        </div>
+        <div className="text-xs text-slate-500 mt-2">
+          ИИ будет использовать загруженные материалы при ответах в чате и
+          анализе токенов.
         </div>
       </Card>
     </div>

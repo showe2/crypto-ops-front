@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { api, download, API } from "@lib/api";
-import { Card, NumberInput, Button, CopyBtn } from "@components/UI";
+import { Card, NumberInput, Button, CopyBtn, Badge } from "@components/UI";
 import presets from "@presets/filters.pump.json";
 
 type Vals = {
@@ -327,7 +327,9 @@ export default function PumpPanel() {
                 <th className="p-3 text-left">Whales1h</th>
                 <th className="p-3 text-left">Social</th>
                 <th className="p-3 text-left">MCAP</th>
+                <th className="p-3 text-left">Безопасность</th>
                 <th className="p-3 text-left">Действия (ИИ)</th>
+                <th className="p-3 text-left">Покупка</th>
               </tr>
             </thead>
             <tbody>
@@ -379,8 +381,49 @@ export default function PumpPanel() {
                       : p.mcap || "-"}
                   </td>
                   <td className="p-3 text-slate-200">
+                    {p.security?.ok ? (
+                      <Badge color="green">OK</Badge>
+                    ) : (
+                      <Badge color="red">RISK</Badge>
+                    )}
+                    <div className="text-xs text-slate-400 whitespace-pre-wrap">
+                      {Array.isArray(p.security?.issues) &&
+                      p.security.issues.length
+                        ? p.security.issues.join(", ")
+                        : ""}
+                    </div>
+                    <div className="text-xs text-slate-300">
+                      Вердикт: {p.secVerdict || "---"}
+                    </div>
+                  </td>
+                  <td className="p-3 text-slate-200">
                     <div className="whitespace-pre-wrap">
                       {p.ai || "ИИ формирует сигнал..."}
+                    </div>
+                  </td>
+                  <td className="p-3">
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() =>
+                          window.open(
+                            `https://pump.fun/coin/${p.mint_full}`,
+                            "_blank"
+                          )
+                        }
+                      >
+                        Pump.fun
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() =>
+                          window.open(
+                            `https://axiom.trade/meme/${p.mint_full}`,
+                            "_blank"
+                          )
+                        }
+                      >
+                        Axiom
+                      </Button>
                     </div>
                   </td>
                 </tr>

@@ -1,6 +1,8 @@
 import React from "react";
 import { api } from "@lib/api";
 import { Button, Card, CopyBtn, Input, NumberInput } from "@components/UI";
+import { pretty } from "@lib/fmt";
+
 export default function BotPanel() {
   const [mint, setMint] = React.useState("");
   const presets = [0.1, 0.2, 0.5, 1, 2, 5];
@@ -8,6 +10,8 @@ export default function BotPanel() {
   const [slip, setSlip] = React.useState(0.5);
   const [prio, setPrio] = React.useState<"normal" | "high">("normal");
   const [history, setHistory] = React.useState<any[]>([]);
+  const [gh, setGh] = React.useState("");
+
   const buy = async () => {
     try {
       await api("POST", "/api/bot/buy", {
@@ -21,6 +25,7 @@ export default function BotPanel() {
       alert("Ошибка BUY");
     }
   };
+
   const sell = async () => {
     try {
       await api("POST", "/api/bot/sell", { mint, percent: 100 });
@@ -29,6 +34,7 @@ export default function BotPanel() {
       alert("Ошибка SELL");
     }
   };
+
   const start = async () => {
     try {
       await api("POST", "/api/bot/start", {
@@ -42,6 +48,16 @@ export default function BotPanel() {
       alert("Ошибка запуска");
     }
   };
+
+  const connectGh = async () => {
+    try {
+      await api("POST", "/api/bot/github", { url: gh });
+      alert("GitHub подключён");
+    } catch {
+      alert("Не удалось подключить GitHub");
+    }
+  };
+
   React.useEffect(() => {
     (async () => {
       try {
@@ -57,14 +73,32 @@ export default function BotPanel() {
             vol5: 9000,
             vol60: 48000,
             whales1h: 2200,
-            verdict: "OK, ретест перед пампом",
+            verdict:
+              "OK, ретест перед пампом. Держим частично, добавка по пробою.",
+            ts: Date.now() - 3600000,
           },
         ]);
       }
     })();
   }, []);
+
   return (
     <div className="grid gap-4">
+      <Card title="Подключение GitHub бота">
+        <div className="grid md:grid-cols-3 gap-2 items-center">
+          <Input
+            placeholder="https://github.com/owner/repo"
+            value={gh}
+            onChange={(e) => setGh((e.target as HTMLInputElement).value)}
+          />
+          <Button onClick={connectGh}>Подключить</Button>
+          <div className="text-xs text-slate-400">
+            Ожидается репозиторий с конфигом бота. Бэкенд подтянет секреты и
+            воркер.
+          </div>
+        </div>
+      </Card>
+
       <Card title="Моментальная покупка">
         <div className="grid md:grid-cols-2 gap-3">
           <div className="grid gap-2">
@@ -131,17 +165,21 @@ export default function BotPanel() {
           </Button>
         </div>
       </Card>
+
       <Card title="Защита (ИИ вывод)">
         <div className="text-sm text-slate-200">
           ИИ агрегирует GoPlus/RugCheck/Sniffer: при рисках → авто SELL, иначе —
-          окно входа и риск-оценка.
+          окно входа и риск-оценка. Учитывает LP lock, mint authority,
+          honeypot-паттерны, миграции девов.
         </div>
       </Card>
+
       <Card title="История сделок бота">
         <div className="overflow-auto rounded-2xl border border-slate-800">
           <table className="w-full text-sm">
             <thead className="bg-slate-800/60 text-slate-300 sticky top-0">
               <tr>
+                <th className="p-3 text-left">Дата/время</th>
                 <th className="p-3 text-left">Токен</th>
                 <th className="p-3 text-left">Mint</th>
                 <th className="p-3 text-left">Ликвидность</th>
@@ -158,6 +196,9 @@ export default function BotPanel() {
                   key={(h.mint || h.name) + i}
                   className="border-t border-slate-800 hover:bg-slate-800/30"
                 >
+                  <td className="p-3 text-slate-400">
+                    {h.ts ? pretty(h.ts) : "---"}
+                  </td>
                   <td className="p-3 text-slate-100">{h.name}</td>
                   <td className="p-3 text-slate-300">
                     <span className="font-mono">{h.mint}</span>
@@ -170,8 +211,8 @@ export default function BotPanel() {
                   <td className="p-3 text-slate-300">{h.vol5}</td>
                   <td className="p-3 text-slate-300">{h.vol60}</td>
                   <td className="p-3 text-slate-300">{h.whales1h}</td>
-                  <td className="p-3 text-slate-200">
-                    {h.verdict || h.ai || "—"}
+                  <td className="p-3 text-slate-200 whitespace-pre-wrap">
+                    {h.verdict || h.ai || "---"}
                   </td>
                 </tr>
               ))}
