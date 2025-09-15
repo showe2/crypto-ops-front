@@ -282,7 +282,7 @@ export default function PoiskPanel() {
               onClick={() =>
                 api("POST", "/api/bot/buy", {
                   mint: r.mint,
-                  amountSol: 0.5,
+                  amount: 0.5,
                 }).catch(() => {})
               }
             >

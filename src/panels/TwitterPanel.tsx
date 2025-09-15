@@ -112,7 +112,7 @@ export default function TwitterPanel() {
       openChart({ mint: r.mint, links: r.links });
       await api("POST", "/api/bot/buy", {
         mint: r.mint,
-        amountSol: 0.5,
+        amount: 0.5,
         mode: "auto",
       });
       alert("BUY отправлен");

@@ -16,7 +16,7 @@ export default function BotPanel() {
     try {
       await api("POST", "/api/bot/buy", {
         mint,
-        amountSol: amt,
+        amount: amt,
         slippage: slip,
         priority: prio,
       });
@@ -39,22 +39,13 @@ export default function BotPanel() {
     try {
       await api("POST", "/api/bot/start", {
         mint,
-        amountSol: amt,
+        amount: amt,
         slippage: slip,
         priority: prio,
       });
       alert("Бот запущен");
     } catch {
       alert("Ошибка запуска");
-    }
-  };
-
-  const connectGh = async () => {
-    try {
-      await api("POST", "/api/bot/github", { url: gh });
-      alert("GitHub подключён");
-    } catch {
-      alert("Не удалось подключить GitHub");
     }
   };
 
@@ -84,21 +75,6 @@ export default function BotPanel() {
 
   return (
     <div className="grid gap-4">
-      <Card title="Подключение GitHub бота">
-        <div className="grid md:grid-cols-3 gap-2 items-center">
-          <Input
-            placeholder="https://github.com/owner/repo"
-            value={gh}
-            onChange={(e) => setGh((e.target as HTMLInputElement).value)}
-          />
-          <Button onClick={connectGh}>Подключить</Button>
-          <div className="text-xs text-slate-400">
-            Ожидается репозиторий с конфигом бота. Бэкенд подтянет секреты и
-            воркер.
-          </div>
-        </div>
-      </Card>
-
       <Card title="Моментальная покупка">
         <div className="grid md:grid-cols-2 gap-3">
           <div className="grid gap-2">
