@@ -10,7 +10,34 @@ export default function BotPanel() {
   const [slip, setSlip] = React.useState(0.5);
   const [prio, setPrio] = React.useState<"normal" | "high">("normal");
   const [history, setHistory] = React.useState<any[]>([]);
-  const [gh, setGh] = React.useState("");
+
+  const fetchHistory = React.useCallback(async () => {
+    try {
+      const h = await api("GET", "/api/bot/history");
+      if (Array.isArray(h)) setHistory(h);
+    } catch {
+      setHistory([
+        {
+          name: "DEMO-COIN",
+          mint: "MintZ999",
+          liq: 12000,
+          mcap: 180000,
+          vol5: 9000,
+          vol60: 48000,
+          whales1h: 2200,
+          verdict:
+            "OK, ретест перед пампом. Держим частично, добавка по пробою.",
+          ts: Date.now() - 3600000,
+        },
+      ]);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchHistory();
+    const interval = setInterval(fetchHistory, 60000);
+    return () => clearInterval(interval);
+  }, [fetchHistory]);
 
   const buy = async () => {
     try {
@@ -21,6 +48,7 @@ export default function BotPanel() {
         priority: prio,
       });
       alert("BUY");
+      fetchHistory();
     } catch {
       alert("Ошибка BUY");
     }
@@ -30,6 +58,7 @@ export default function BotPanel() {
     try {
       await api("POST", "/api/bot/sell", { mint, percent: 100 });
       alert("SELL ALL");
+      fetchHistory();
     } catch {
       alert("Ошибка SELL");
     }
@@ -44,34 +73,11 @@ export default function BotPanel() {
         priority: prio,
       });
       alert("Бот запущен");
+      fetchHistory();
     } catch {
       alert("Ошибка запуска");
     }
   };
-
-  React.useEffect(() => {
-    (async () => {
-      try {
-        const h = await api("GET", "/api/bot/history");
-        if (Array.isArray(h)) setHistory(h);
-      } catch {
-        setHistory([
-          {
-            name: "DEMO-COIN",
-            mint: "MintZ999",
-            liq: 12000,
-            mcap: 180000,
-            vol5: 9000,
-            vol60: 48000,
-            whales1h: 2200,
-            verdict:
-              "OK, ретест перед пампом. Держим частично, добавка по пробою.",
-            ts: Date.now() - 3600000,
-          },
-        ]);
-      }
-    })();
-  }, []);
 
   return (
     <div className="grid gap-4">
@@ -100,8 +106,13 @@ export default function BotPanel() {
                 <NumberInput
                   value={amt}
                   onChange={(e) =>
-                    setAmt(+(e.target as HTMLInputElement).value)
+                    setAmt(
+                      parseFloat((e.target as HTMLInputElement).value) || 0
+                    )
                   }
+                  step="0.001"
+                  min="0"
+                  placeholder="0.000"
                 />
                 <span className="text-slate-300">SOL</span>
               </div>

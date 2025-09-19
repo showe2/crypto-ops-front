@@ -15,7 +15,7 @@ export default function StartPanel() {
     },
     {
       key: "GOPLUS_APP_SECRET",
-      label: "GoPlus (SCRT)",
+      label: "GoPlus (SEC)",
       ok: false,
       keyValue: "",
     },
